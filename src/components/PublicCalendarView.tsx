@@ -199,7 +199,10 @@ export function PublicCalendarView({
 
       {/* REGISTER FORM IF CALLED */}
       {selectedDiscoverEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/40 animate-fade-in select-text">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedDiscoverEvent(null); }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/40 animate-fade-in select-text"
+        >
           <div className="bg-white dark:bg-[#110F2B] max-w-md w-full rounded-2xl p-6 border border-slate-200 dark:border-indigo-950/20 text-left space-y-5 shadow-2xl relative">
             <button
               onClick={() => setSelectedDiscoverEvent(null)}
@@ -292,7 +295,10 @@ export function PublicCalendarView({
 
       {/* SECURE PASS DETAILS POPUP MODAL */}
       {selectedPassModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/55 select-text animate-fade-in">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedPassModal(null); }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/55 select-text animate-fade-in"
+        >
           <div className="bg-[#0B0A16] max-w-lg w-full rounded-3xl p-6 border border-white/5 text-center space-y-6 shadow-2xl relative">
             <div className="space-y-1">
               <span className="text-[10px] tracking-widest font-mono font-bold uppercase text-emerald-400">Offline Authenticated</span>
@@ -364,13 +370,6 @@ export function PublicCalendarView({
           </div>
         </div>
       )}
-
-      {/* Confetti celebrations */}
-      <ConfettiShower
-        trigger={confettiTrigger}
-        styleType="stars"
-        brandColor={currentVibe.pill.includes('purple') ? '#8b5cf6' : '#14b8a6'}
-      />
     </div>
   );
 }

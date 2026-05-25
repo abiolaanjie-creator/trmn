@@ -40,6 +40,7 @@ import {
   Share2,
   Trash2,
   Check,
+  Edit,
   Search,
   UserPlus,
   Upload,
@@ -53,6 +54,7 @@ import {
   Moon,
   Sun,
   User,
+  Mail,
   LayoutGrid,
   CheckCircle,
   HelpCircle,
@@ -180,32 +182,6 @@ const DEFAULT_ATTENDEES: Attendee[] = [
 ];
 
 const DISCOVER_PRESET_EVENTS: EventDetails[] = [
-  {
-    id: 'evt-sunset-solstice',
-    name: 'Solstice Sunset Rooftop Session',
-    dateTime: '2026-06-25T18:00',
-    venue: 'The Sky Garden, Level 44',
-    organizerName: 'Aura Soundscapes',
-    brandColor: '#F97316',
-    template: 'AURORA',
-    pattern: 'diagonal',
-    animation: 'shimmer',
-    emojis: ['🌇', '🎶', '✨'],
-    badgeText: 'VIP',
-    secretKey: 'sunset-solstice-token-secret-2026',
-    ticketType: 'paid',
-    ticketPrice: 35,
-    category: 'Music & Nightlife',
-    shortDescription: 'Catch the magic of midsummer night under orange and amber sky lights.',
-    hostTitle: 'Aura Soundscapes Group',
-    about: 'An immersive deep house exploration in Nigeria’s highest sky deck. Features therapeutic acoustic setups, complementary cocktails, and customized verification passes.',
-    agenda: [
-      { id: '1', time: '06:00 PM', activity: 'Acoustic Sound Bath Intro' },
-      { id: '2', time: '07:15 PM', activity: 'Sunset DJ session with Aura Crew' },
-      { id: '3', time: '09:00 PM', activity: 'Midsummer stargazing list' },
-    ],
-    tags: ['Rooftop', 'Deep House', 'Sunset', 'Solstice']
-  },
   {
     id: 'evt-ai-summit',
     name: 'Decentralized AI Summit 2026',
@@ -646,9 +622,6 @@ function TrmnAppContent() {
     // Reset inputs
     setCustomAttendeeName('');
     setCustomAttendeeEmail('');
-    
-    // Confetti celebration
-    setConfettiTrigger((t) => t + 1);
   };
 
   // Delete attendee record
@@ -1020,38 +993,33 @@ function TrmnAppContent() {
     setRegisteredEvents(prev => [{ event: evt, attendee: guestPassEntry }, ...prev]);
     // Also append to standard attendees list so scanner parses it
     setAttendees(prev => [guestPassEntry, ...prev]);
-    setConfettiTrigger(t => t + 1);
   };
 
   // Spawn customizable fresh event templates
   const handleCreateCustomEvent = () => {
     const id = `evt-${Math.random().toString(36).substring(2, 9)}`;
-    const presets = [
-      { name: 'Afrobeats Symphony Live Arena', organizer: 'Lagos Acoustics', color: '#F97316', emojis: ['🥁', '🎶', '🔥'] },
-      { name: 'Crypto Sovereignty Builders Meet', organizer: 'Aesthetics Lab', color: '#8B5CF6', emojis: ['💻', '✨', '🌐'] },
-      { name: 'Soma Artisan Wine & Art Suite', organizer: 'The Glass Cellar', color: '#10B981', emojis: ['🍷', '🎨', '🍞'] },
-      { name: 'Web Core Performance Symposium', organizer: 'Vite Pioneers Guild', color: '#0EA5E9', emojis: ['🚀', '📈', '✨'] }
-    ];
-    const chosen = presets[Math.floor(Math.random() * presets.length)];
     const newEvt: EventDetails = {
       id,
-      name: chosen.name,
-      dateTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().substring(0, 16), // 14 days in the future
-      venue: 'Soma Penthouse Pavilion, Flat 12A',
-      organizerName: chosen.organizer,
-      brandColor: chosen.color,
-      template: 'AURORA',
-      pattern: 'waves',
-      animation: 'shimmer',
-      emojis: chosen.emojis,
+      name: '',
+      dateTime: '',
+      venue: '',
+      organizerName: '',
+      brandColor: '#6366F1',
+      template: 'NEON',
+      pattern: 'diagonal',
+      animation: 'pulse',
+      emojis: ['🎫'],
       badgeText: 'VIP',
       secretKey: `secret-${Math.random().toString(36).substring(2, 9)}`,
+      shortDescription: '',
+      about: '',
+      ticketType: 'free',
+      ticketPrice: 0
     };
 
     setCreatedEvents(prev => [...prev, newEvt]);
     setActiveEditingEventId(id);
     setEvent(newEvt);
-    setConfettiTrigger(t => t + 1);
   };
 
   // Filter attendees matching specific active event
@@ -1161,7 +1129,7 @@ function TrmnAppContent() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5">
               <div>
                 <h1 className="text-3xl font-black font-sans leading-tight tracking-tight text-slate-900 dark:text-white">
-                  {event.name || 'Untitled Event'}
+                  {event.name || 'Event title'}
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium select-none mt-1.5">
                   {event.venue || 'No location set'} · {new Date(event.dateTime).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -1184,15 +1152,8 @@ function TrmnAppContent() {
                   onClick={() => setActiveTab('creator')}
                   className="px-4 py-1.5 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:scale-[1.01] active:scale-95 transition-all shadow-md shadow-indigo-500/10"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Edit className="w-3.5 h-3.5" />
                   Edit Event
-                </button>
-                
-                <button
-                  onClick={() => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer block"
-                >
-                  {settings.theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </button>
               </div>
             </div>
@@ -1278,7 +1239,10 @@ function TrmnAppContent() {
 
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setActiveTab('overview')}
+                onClick={() => {
+                  setActiveTab('overview');
+                  setConfettiTrigger((t) => t + 1);
+                }}
                 className="px-5 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-650 dark:hover:bg-indigo-550 text-white text-xs font-bold cursor-pointer transition-all shadow-md shadow-indigo-600/10 flex items-center gap-1.5 shrink-0 hover:scale-[1.01] active:scale-98 select-none"
               >
                 <Check className="w-3.5 h-3.5 shrink-0 text-indigo-200" />
@@ -1318,7 +1282,7 @@ function TrmnAppContent() {
                   <div className="space-y-4">
                     <InputField
                       label="Event Title / Name *"
-                      placeholder="e.g., Midnight Jazz & Cabernet"
+                      placeholder="Event title"
                       value={event.name}
                       onChange={(e) => setEvent({ ...event, name: e.target.value })}
                       icon={<Ticket className="w-3.5 h-3.5" />}
@@ -1326,7 +1290,7 @@ function TrmnAppContent() {
 
                     <InputField
                       label="Organizer / Host"
-                      placeholder="e.g., Trmn pass"
+                      placeholder="add organizer/host"
                       value={event.organizerName}
                       onChange={(e) => setEvent({ 
                         ...event, 
@@ -1347,12 +1311,28 @@ function TrmnAppContent() {
 
                       <InputField
                         label="Location"
-                        placeholder="e.g., Soma Penthouse Pavilion"
+                        placeholder="add event location"
                         value={event.venue}
                         onChange={(e) => setEvent({ ...event, venue: e.target.value })}
                         icon={<MapPin className="w-3.5 h-3.5" />}
                       />
                     </div>
+
+                    <InputField
+                      label="Short Description"
+                      placeholder="add description (e.g., Unlocking localized LLM inference speeds, offline edge verification, and sovereign security networks.)"
+                      isTextArea={true}
+                      value={event.shortDescription || ''}
+                      onChange={(e) => setEvent({ ...event, shortDescription: e.target.value })}
+                    />
+
+                    <InputField
+                      label="About Details"
+                      placeholder="add description (e.g., Join 500+ tech leaders researching localized neural models, secure cryptography systems, and sandboxed developer operations with direct industrial hardware demonstrations.)"
+                      isTextArea={true}
+                      value={event.about || ''}
+                      onChange={(e) => setEvent({ ...event, about: e.target.value })}
+                    />
 
                     <div className="border-t border-slate-200/50 dark:border-white/5 pt-5 mt-2">
                       <EventImageUploader
@@ -1865,7 +1845,7 @@ function TrmnAppContent() {
                         placeholder="Yemi Adebayo"
                         value={customAttendeeName}
                         onChange={(e) => setCustomAttendeeName(e.target.value)}
-                        icon={<Sparkles className="w-3.5 h-3.5" />}
+                        icon={<User className="w-3.5 h-3.5" />}
                       />
                       
                       <SelectField
@@ -1873,7 +1853,7 @@ function TrmnAppContent() {
                         className="!h-9 !text-xs"
                         value={customAttendeeType}
                         onChange={(e: any) => setCustomAttendeeType(e.target.value)}
-                        icon={<Sparkles className="w-3.5 h-3.5" />}
+                        icon={<Ticket className="w-3.5 h-3.5" />}
                       >
                         <option value="GENERAL">General</option>
                         <option value="VIP">VIP</option>
@@ -1888,7 +1868,7 @@ function TrmnAppContent() {
                         placeholder="yemi@example.com"
                         value={customAttendeeEmail}
                         onChange={(e) => setCustomAttendeeEmail(e.target.value)}
-                        icon={<Sparkles className="w-3.5 h-3.5" />}
+                        icon={<Mail className="w-3.5 h-3.5" />}
                       />
                     </div>
 
@@ -2168,7 +2148,6 @@ function TrmnAppContent() {
                       <button
                         onClick={() => {
                           setHasSentBlastSimulated(true);
-                          setConfettiTrigger(t => t + 1);
                           setTimeout(() => setHasSentBlastSimulated(false), 8000);
                         }}
                         className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-slate-950 text-white dark:hover:bg-slate-900 font-bold text-xs shadow-md shadow-indigo-600/10 cursor-pointer select-none transition-all border border-transparent dark:border-slate-800"
@@ -2387,7 +2366,6 @@ function TrmnAppContent() {
               }));
               setAttendees((prev) => [...mappedImported, ...prev]);
               setShowBulkUpload(false);
-              setConfettiTrigger((t) => t + 1);
             }}
             onClose={() => setShowBulkUpload(false)}
           />
@@ -2407,7 +2385,7 @@ function TrmnAppContent() {
         <div className="flex items-center gap-3 sm:gap-6 min-w-0">
           {/* Main logo mark on the far left */}
           <div className="flex items-center cursor-pointer select-none shrink-0" onClick={() => setNavTab('events')}>
-            <TrmnLogo className="h-6" themeMode="adaptive" />
+            <TrmnLogo className="h-5" themeMode="adaptive" />
           </div>
 
           {/* Clean, text-based navigation links exactly matching screenshot */}
@@ -2482,15 +2460,6 @@ function TrmnAppContent() {
             </button>
           </div>
 
-          {/* Simple theme switcher */}
-          <button
-            onClick={() => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
-            className="hidden min-[360px]:flex p-1.5 sm:p-2 rounded-full text-slate-400 hover:text-slate-650 dark:text-slate-550 dark:hover:text-slate-350 hover:bg-slate-150/40 dark:hover:bg-slate-900/60 transition-all cursor-pointer active:scale-95"
-            aria-label="Toggle theme mode"
-          >
-            {settings.theme === 'dark' ? <Sun className="w-4 h-4 text-slate-400" /> : <Moon className="w-4 h-4 text-slate-500" />}
-          </button>
-
           {/* Profile identity avatar */}
           <button
             onClick={() => setNavTab('profile')}
@@ -2558,8 +2527,11 @@ function TrmnAppContent() {
 
       {/* VERIFIED TICKET DETAILED PREVIEW MODAL ATTACHED GLOBALLY */}
       {selectedPassModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/55 select-text animate-fade-in text-center">
-          <div className="bg-[#0B0A16] max-w-lg w-full rounded-2xl p-6 border border-white/5 text-center space-y-6 shadow-2xl relative">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedPassModal(null); }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/55 select-text animate-fade-in text-center"
+        >
+          <div className="bg-[#0B0A16] max-w-lg w-full rounded-2xl p-6 text-center space-y-6 shadow-2xl relative">
             <div className="space-y-1">
               <span className="text-[10px] tracking-widest font-mono font-bold uppercase text-emerald-400">Offline Securely Verified</span>
               <h3 className="text-base font-black text-white">{selectedPassModal.event.name} Ticket Pass</h3>

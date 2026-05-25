@@ -193,7 +193,10 @@ export function BulkUploadComp({ event, onImportComplete, onClose }: BulkUploadC
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-slate-800 dark:text-slate-100 select-text">
+    <div 
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-slate-800 dark:text-slate-100 select-text"
+    >
       <div className="bg-white dark:bg-[#16152B] w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-indigo-950/40 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header bar */}

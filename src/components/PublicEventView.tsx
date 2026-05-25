@@ -152,11 +152,11 @@ export function PublicEventView({
             </div>
 
             <h1 className={`text-2xl sm:text-3xl tracking-tight leading-snug break-words ${theme.textPrimary}`}>
-              {event.name}
+              {event.name || 'Event title'}
             </h1>
 
             <p className={`text-xs max-w-xl leading-relaxed ${theme.textSecondary}`}>
-              {event.shortDescription || 'Join us for this high-end interactive encounter. Register below to secure an offline-verifiable, cryptographically signed attendee ticket pass immediately.'}
+              {event.shortDescription || "Add a brief description for your event for your attendees to see"}
             </p>
 
             {/* Event Time / Date and Map tags */}
@@ -345,7 +345,10 @@ export function PublicEventView({
 
       {/* SECURE PASS DETAILS POPUP MODAL */}
       {selectedPassModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/60 select-text animate-fade-in text-center">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedPassModal(null); }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/60 select-text animate-fade-in text-center"
+        >
           <div className="bg-[#0B0A16] max-w-md w-full rounded-2xl p-6 border border-white/5 text-center space-y-5 shadow-2xl relative">
             <button
               onClick={() => setSelectedPassModal(null)}
@@ -398,13 +401,6 @@ export function PublicEventView({
           </div>
         </div>
       )}
-
-      {/* Confetti celebration showers */}
-      <ConfettiShower
-        trigger={confettiTrigger}
-        styleType="stars"
-        brandColor={event.brandColor || '#6366F1'}
-      />
     </div>
   );
 }

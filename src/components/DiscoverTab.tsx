@@ -176,7 +176,10 @@ export function DiscoverTab({ presets, userProfile, onRegisterPass }: DiscoverTa
 
       {/* EVENT EXTRA DETAILS POPUP */}
       {expandedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/45 animate-fade-in select-text">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setExpandedEvent(null); }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/45 animate-fade-in select-text"
+        >
           <div className="bg-white dark:bg-[#110F2B] max-w-lg w-full rounded-3xl p-6 border border-slate-200 dark:border-indigo-950/20 text-left space-y-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             
             <button

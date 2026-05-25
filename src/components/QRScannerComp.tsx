@@ -194,7 +194,10 @@ export function QRScannerComp({ event, attendeeList, onCheckIn, onClose }: QRSca
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col justify-between ${stateBgs[scanState]} transition-all duration-300`}>
+    <div 
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      className={`fixed inset-0 z-50 flex flex-col justify-between ${stateBgs[scanState]} transition-all duration-300`}
+    >
       {/* ── TOP ACTION BAR ── */}
       <div className="flex justify-between items-center px-5 py-4 bg-black/40 backdrop-blur-md border-b border-white/10 text-white z-10">
         <div className="flex items-center gap-2">

@@ -25,7 +25,11 @@ import {
   Twitter,
   Linkedin,
   QrCode,
-  Palette
+  Palette,
+  X,
+  Download,
+  ChevronLeft,
+  Send
 } from 'lucide-react';
 import { EventDetails, Attendee } from '../types';
 import { PassCardPreview } from './PassCardPreview';
@@ -172,6 +176,37 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
+  
+  // Custom Flow Modals (Invite Guests, Send Blast, Share Event)
+  const [showInviteGuestsModal, setShowInviteGuestsModal] = useState(false);
+  const [showSendBlastModal, setShowSendBlastModal] = useState(false);
+  const [showShareEventModal, setShowShareEventModal] = useState(false);
+
+  // States inside Invite Guests Modal
+  const [inviteStep, setInviteStep] = useState<1 | 2>(1);
+  const [pendingEmailInput, setPendingEmailInput] = useState('');
+  const [invitedGuestsList, setInvitedGuestsList] = useState<{ email: string; name: string }[]>([
+    { email: 'william.garcia@example.com', name: 'William Garcia' },
+    { email: 'brian.wilson@example.com', name: 'Brian Wilson' },
+    { email: 'ashley.thomas@example.com', name: 'Ashley Thomas' },
+    { email: 'kevin.anderson@example.com', name: 'Kevin Anderson' },
+    { email: 'rachel.thomas@example.com', name: 'Rachel Thomas' },
+    { email: 'jason.jackson@example.com', name: 'Jason Jackson' },
+    { email: 'stephanie.white@example.com', name: 'Stephanie White' }
+  ]);
+  const [customMessage, setCustomMessage] = useState('');
+  const [successToast, setSuccessToast] = useState('');
+
+  // States inside Send Blast Modal
+  const [blastRecipient, setBlastRecipient] = useState('Going');
+  const [blastSubject, setBlastSubject] = useState('');
+  const [blastMessage, setBlastMessage] = useState('');
+  const [blastPreviewMode, setBlastPreviewMode] = useState(false);
+  const [blastFeedbackMessage, setBlastFeedbackMessage] = useState('');
+
+  // Share Event Modal states
+  const [shareCopied, setShareCopied] = useState(false);
+
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'guests'>('overview');
   const [showQuickInviteModal, setShowQuickInviteModal] = useState(false);
   const [inviteName, setInviteName] = useState('');
@@ -188,7 +223,14 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
 
   React.useEffect(() => {
     const calculateTimeLeft = () => {
-      const difference = +new Date(event.dateTime) - +new Date();
+      if (!event.dateTime) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      }
+      const targetTime = +new Date(event.dateTime);
+      if (isNaN(targetTime)) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      }
+      const difference = targetTime - +new Date();
       let timeLeftObj = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 
       if (difference > 0) {
@@ -199,8 +241,7 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
           seconds: Math.floor((difference / 1000) % 60)
         };
       } else {
-        // Safe premium fallback to match mockup duration values if example date is in past
-        timeLeftObj = { days: 5, hours: 14, minutes: 32, seconds: 18 };
+        timeLeftObj = { days: 0, hours: 0, minutes: 0, seconds: 0 };
       }
       return timeLeftObj;
     };
@@ -348,8 +389,14 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
       
       {/* QUICK INVITE OVERLAY MODAL */}
       {showQuickInviteModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#110F30] rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100 dark:border-white/5 animate-scale-up">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setShowQuickInviteModal(false); }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-[#110F30] rounded-2xl w-full max-w-md p-6 shadow-2xl animate-scale-up"
+          >
             <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2 flex items-center gap-2">
               <Mail className="w-5 h-5 text-indigo-500" />
               Invite Guest Directly
@@ -446,11 +493,11 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
         {/* Content Box */}
         <div className="relative z-10 max-w-4xl mx-auto space-y-5 px-4">
           <h1 className={`font-display text-4xl sm:text-5xl md:text-6xl font-black ${bannerSpecs.titleColor} leading-tight tracking-tight mt-2 select-text max-w-3xl mx-auto`}>
-            {event.name}
+            {event.name || 'Event title'}
           </h1>
 
           <p className={`text-sm md:text-base ${bannerSpecs.dateColor} max-w-2xl mx-auto font-medium select-none leading-relaxed`}>
-            Join us on <span className={`${bannerSpecs.strongColor}`}>{dateDetails.weekday}, {dateDetails.monthFull} {dateDetails.day}</span> at <span className={`${bannerSpecs.strongColor}`}>{event.venue || 'venue location'}</span> for a hand-crafted interactive digital event experience.
+            {event.shortDescription || "Add a brief description for your event for your attendees to see"}
           </p>
         </div>
 
@@ -508,11 +555,13 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
         </div>
 
       </div>
-
       {/* REFINED SLEEK INTERACTIVE ACTIONS ROW */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 select-none font-sans">
         <button 
-          onClick={() => setShowQuickInviteModal(true)}
+          onClick={() => {
+            setInviteStep(1);
+            setShowInviteGuestsModal(true);
+          }}
           className="flex items-center gap-3.5 p-3.5 bg-white dark:bg-[#16152B] border border-slate-200/50 dark:border-indigo-950/20 rounded-2xl shadow-none hover:bg-slate-50 dark:hover:bg-slate-800/55 hover:translate-y-[-1px] active:scale-[0.99] transition-all cursor-pointer text-left focus:outline-none"
         >
           <div className="w-10 h-10 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
@@ -520,12 +569,14 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
           </div>
           <div>
             <h4 className="text-sm font-extrabold text-slate-800 dark:text-white leading-none">Invite Guests</h4>
-            <p className="text-[10px] text-slate-400 mt-1 leading-none">Spawn secure passes</p>
           </div>
         </button>
 
         <button 
-          onClick={() => alert('Blast composer online! Frame a push instruction message target to all registered and VIP members.')}
+          onClick={() => {
+            setBlastFeedbackMessage('');
+            setShowSendBlastModal(true);
+          }}
           className="flex items-center gap-3.5 p-3.5 bg-white dark:bg-[#16152B] border border-slate-200/50 dark:border-indigo-950/20 rounded-2xl shadow-none hover:bg-slate-50 dark:hover:bg-slate-800/55 hover:translate-y-[-1px] active:scale-[0.99] transition-all cursor-pointer text-left focus:outline-none"
         >
           <div className="w-10 h-10 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
@@ -533,22 +584,20 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
           </div>
           <div>
             <h4 className="text-sm font-extrabold text-slate-800 dark:text-white leading-none">Send a Blast</h4>
-            <p className="text-[10px] text-slate-400 mt-1 leading-none">Message registered attendees</p>
           </div>
         </button>
 
         <button 
-          onClick={handleCopyLink}
+          onClick={() => setShowShareEventModal(true)}
           className="flex items-center gap-3.5 p-3.5 bg-white dark:bg-[#16152B] border border-slate-200/50 dark:border-indigo-950/20 rounded-2xl shadow-none hover:bg-slate-50 dark:hover:bg-slate-800/55 hover:translate-y-[-1px] active:scale-[0.99] transition-all cursor-pointer text-left focus:outline-none"
         >
-          <div className="w-10 h-10 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-605 dark:text-violet-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-650 dark:text-violet-400 flex items-center justify-center shrink-0">
             <Share2 className="w-5 h-5" />
           </div>
           <div className="flex-grow">
             <h4 className="text-sm font-extrabold text-slate-800 dark:text-white leading-none">
-              {copiedLink ? '✓ Copied' : 'Share Event'}
+              Share Event
             </h4>
-            <p className="text-[10px] text-slate-400 mt-1 leading-none">Copy and spread invitation</p>
           </div>
         </button>
       </div>
@@ -572,9 +621,6 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
             <h3 className="text-lg font-black text-slate-800 dark:text-white leading-none mb-1">
               When &amp; Where
             </h3>
-            <p className="text-xs text-slate-400">
-              Configure timing details and operational directions below.
-            </p>
           </div>
 
           {/* DATE AND TIME TRAY BLOCK */}
@@ -718,7 +764,10 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
               </div>
 
               <button
-                onClick={() => setShowQuickInviteModal(true)}
+                onClick={() => {
+                  setInviteStep(1);
+                  setShowInviteGuestsModal(true);
+                }}
                 className="px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-xs font-black text-slate-700 hover:text-black dark:text-slate-300 dark:hover:text-white flex items-center gap-1 border border-slate-200 dark:border-slate-800 cursor-pointer shadow-sm transition-all text-sm leading-none"
               >
                 <Plus className="w-4.5 h-4.5" />
@@ -982,11 +1031,18 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
 
           </div>
 
-        </div></div>
+        </div>
+      </div>
 
       {showThemeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 animate-fade-in select-none">
-          <div className="bg-white dark:bg-[#16152B] rounded-3xl p-6 max-w-lg w-full border border-slate-100 dark:border-indigo-950/20 shadow-2xl relative text-left">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setShowThemeModal(false); }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 animate-fade-in select-none"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-[#16152B] rounded-3xl p-6 max-w-lg w-full shadow-2xl relative text-left"
+          >
             <h3 className="text-base font-black text-slate-900 dark:text-white mb-1">
               Select Banner Theme
             </h3>
@@ -1049,6 +1105,538 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 1: Invite Guests Modal --- */}
+      {showInviteGuestsModal && (
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setShowInviteGuestsModal(false); }}
+          className="fixed inset-0 bg-slate-150/40 dark:bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in font-sans"
+        >
+          <div className="bg-white dark:bg-[#110F30] rounded-2xl w-full max-w-4xl shadow-2xl relative overflow-hidden flex flex-col md:flex-row h-[550px]" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Left rail/sidebar layout matching Suggestions & Enter Emails */}
+            <div className="w-full md:w-[240px] bg-slate-50/55 dark:bg-slate-950/30 border-b md:border-b-0 md:border-r border-slate-150 dark:border-white/5 p-4 flex flex-col justify-between shrink-0">
+              <div className="space-y-4">
+                <div className="px-1">
+                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">Invite Channels</span>
+                </div>
+                
+                <div className="space-y-1">
+                  <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-black text-violet-650 dark:text-violet-400 bg-violet-50/60 dark:bg-violet-950/15 text-left transition-colors border border-violet-100/30 dark:border-violet-900/10">
+                    <span className="text-xs font-bold">@</span>
+                    Enter Emails
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom sidebar info indicator */}
+              <div className="bg-slate-100/50 dark:bg-slate-900/60 flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-white/5 text-[10px] text-slate-400">
+                <span>Total Invited:</span>
+                <span className="font-mono font-bold dark:text-white">{invitedGuestsList.length}</span>
+              </div>
+            </div>
+
+            {/* Right main area columns changing dynamically by tab/step */}
+            <div className="flex-grow flex flex-col justify-between p-6">
+              
+              {/* Top Header of right area */}
+              <div className="flex justify-between items-center pb-3.5 border-b border-slate-100 dark:border-white/5 shrink-0">
+                <h3 className="text-base font-black text-slate-800 dark:text-white">Invite Guests</h3>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setShowInviteGuestsModal(false)}
+                    className="p-1.5 rounded-full border border-slate-150 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-400 hover:text-slate-705 dark:hover:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Success Toast / Notification Inside Modal */}
+              {successToast && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-4 py-2.5 rounded-xl text-xs font-bold leading-tight select-none flex items-center gap-2 animate-pulse mt-2 shrink-0">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{successToast}</span>
+                </div>
+              )}
+
+              {/* Main Content Area */}
+              <div className="flex-grow overflow-y-auto py-4 select-text">
+                {inviteStep === 1 ? (
+                  // STEP 1 UI: ENTER EMAILS AND CSV IMPORT
+                  <div className="space-y-5 text-left">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Add Emails</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text"
+                          placeholder="Paste or enter emails here (e.g. guest@soma.tech)"
+                          value={pendingEmailInput}
+                          onChange={(e) => setPendingEmailInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (pendingEmailInput.trim() && pendingEmailInput.includes('@')) {
+                                const email = pendingEmailInput.trim();
+                                const username = email.split('@')[0];
+                                const name = username.replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                                setInvitedGuestsList(prev => [...prev, { email, name }]);
+                                setPendingEmailInput('');
+                                setSuccessToast(`Added ${email} to invite list.`);
+                                setTimeout(() => setSuccessToast(''), 3000);
+                              }
+                            }
+                          }}
+                          className="flex-grow px-3 py-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-905 text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/10 text-slate-800 dark:text-white"
+                        />
+                        <button
+                          onClick={() => {
+                            if (pendingEmailInput.trim() && pendingEmailInput.includes('@')) {
+                              const email = pendingEmailInput.trim();
+                              const username = email.split('@')[0];
+                              const name = username.replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                              setInvitedGuestsList(prev => [...prev, { email, name }]);
+                              setPendingEmailInput('');
+                              setSuccessToast(`Added ${email} to invite list.`);
+                              setTimeout(() => setSuccessToast(''), 3000);
+                            }
+                          }}
+                          className="px-4 py-2 rounded-xl bg-violet-650 hover:bg-violet-700 text-white text-xs font-bold cursor-pointer transition-all shrink-0"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Import CSV</label>
+                      
+                      {/* Interactive Drag & Drop Area */}
+                      <div 
+                        onClick={() => {
+                          const fileInput = document.getElementById('modal-csv-uploader') as HTMLInputElement;
+                          fileInput?.click();
+                        }}
+                        className="border-2 border-dashed border-slate-200 dark:border-indigo-950/40 rounded-2xl bg-slate-50/50 dark:bg-slate-900/40 p-10 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-all flex flex-col items-center justify-center space-y-2 group"
+                      >
+                        <input 
+                          type="file" 
+                          id="modal-csv-uploader" 
+                          accept=".csv" 
+                          className="hidden" 
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              const file = e.target.files[0];
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                const text = ev.target?.result as string;
+                                const lines = text.split('\n');
+                                const parsed = [];
+                                for (let i = 1; i < lines.length; i++) {
+                                  const row = lines[i].trim();
+                                  if (row) {
+                                    const cols = row.split(',');
+                                    if (cols[0] && cols[0].includes('@')) {
+                                      parsed.push({
+                                        email: cols[0].trim(),
+                                        name: cols[1] ? cols[1].trim() : cols[0].split('@')[0].replace(/[._-]/g, ' ')
+                                      });
+                                    }
+                                  }
+                                }
+                                if (parsed.length > 0) {
+                                  setInvitedGuestsList(parsed);
+                                  setSuccessToast(`Successfully imported ${parsed.length} guests from CSV!`);
+                                  setTimeout(() => setSuccessToast(''), 5000);
+                                } else {
+                                  setSuccessToast(`No emails found inside CSV rows. Populated template list instead.`);
+                                  setTimeout(() => setSuccessToast(''), 4000);
+                                }
+                              };
+                              reader.readAsText(file);
+                            }
+                          }}
+                        />
+                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-905 border border-slate-150 dark:border-indigo-950 flex items-center justify-center text-slate-400 group-hover:scale-[1.03] transition-transform">
+                          <span className="text-[10px] font-black">CSV</span>
+                        </div>
+                        <h4 className="text-xs font-black text-slate-800 dark:text-white">Import CSV File</h4>
+                        <p className="text-[10px] text-slate-400">Drop file or click here to choose file from system folder.</p>
+                      </div>
+
+                      <button 
+                        onClick={() => {
+                          const content = "email,name,type\nwilliam.garcia@example.com,William Garcia,GENERAL\nbrian.wilson@example.com,Brian Wilson,VIP\nashley.thomas@example.com,Ashley Thomas,VIP\nkevin.anderson@example.com,Kevin Anderson,GENERAL\nrachel.thomas@example.com,Rachel Thomas,GENERAL\njason.jackson@example.com,Jason Jackson,GENERAL\nstephanie.white@example.com,Stephanie White,VIP\n";
+                          const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement("a");
+                          link.setAttribute("href", url);
+                          link.setAttribute("download", "guest_invite_template.csv");
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          setSuccessToast("Guest CSV Template downloaded. Load it back with emails updated!");
+                          setTimeout(() => setSuccessToast(''), 4000);
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[10.5px] font-black text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-violet-400 transition-colors cursor-pointer mt-2"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Download CSV Template
+                      </button>
+                    </div>
+
+                  </div>
+                ) : (
+                  // STEP 2 UI: RETRIEVING INVITE MESSAGE AND PREVIEW WITH COLUMNS
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-5 h-full items-stretch text-left">
+                    {/* Left Column of step 2: scrollable people list */}
+                    <div className="md:col-span-5 border-r border-slate-100 dark:border-white/5 pr-4 flex flex-col justify-start">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">Inviting {invitedGuestsList.length} People</span>
+                      <div className="space-y-2 max-h-[290px] overflow-y-auto pr-1">
+                        {invitedGuestsList.map((itm, idx) => {
+                          const initials = itm.name ? itm.name.substring(0, 2).toUpperCase() : 'GT';
+                          return (
+                            <div key={idx} className="flex items-center gap-2.5 p-1.5 rounded-lg bg-slate-50/60 dark:bg-slate-900/20 border border-slate-150/20 dark:border-white/5">
+                              <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-extrabold text-slate-555 dark:text-slate-300 flex items-center justify-center select-none shrink-0">
+                                {initials}
+                              </div>
+                              <div className="leading-tight overflow-hidden text-ellipsis flex-grow font-sans">
+                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{itm.name}</h4>
+                                <span className="text-[10px] text-slate-400 truncate block font-mono leading-none">{itm.email}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Right Column of step 2: text compose */}
+                    <div className="md:col-span-7 space-y-4">
+                      <div className="p-4 rounded-xl border border-slate-150 dark:border-indigo-950 bg-slate-50/50 dark:bg-indigo-950/10 space-y-3 font-sans">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-white/5 rounded-xl p-3 text-xs text-slate-600 dark:text-slate-300 shadow-sm leading-relaxed">
+                          Hi, <strong>{userProfile.name}</strong> invites you to join <strong>{event.name || 'Event title'}</strong>.
+                        </div>
+                        <textarea
+                          placeholder="Add a custom message here..."
+                          value={customMessage}
+                          onChange={(e) => setCustomMessage(e.target.value)}
+                          className="w-full h-20 p-3 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/10 text-slate-800 dark:text-white resize-none"
+                        />
+                        <div className="p-2 bg-white dark:bg-slate-900 border border-slate-150 dark:border-white/5 rounded-xl text-[11px] text-indigo-505 dark:text-indigo-400 font-mono truncate select-all">
+                          RSVP: {publicUrl}
+                        </div>
+                      </div>
+
+                      {/* Info indicator box with plus icon */}
+                      <div className="p-3.5 rounded-xl border border-slate-150 dark:border-white/5 bg-slate-50 dark:bg-slate-900/30 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-850 flex items-center justify-center text-slate-400 shrink-0 font-black">
+                          +
+                        </div>
+                        <p className="text-[10.5px] text-slate-400 leading-snug font-sans">We will send them an invite link to register for the event.</p>
+                      </div>
+
+                      <div className="text-[10.5px] text-slate-400 leading-snug pt-1 font-sans">
+                        You can bypass registration and payment by adding guests directly to the guest list.{' '}
+                        <button
+                          onClick={() => {
+                            invitedGuestsList.forEach(guest => {
+                              onRegisterPass(event, {
+                                name: guest.name,
+                                email: guest.email,
+                                type: 'GENERAL'
+                              });
+                            });
+                            setShowInviteGuestsModal(false);
+                            alert(`Registered all ${invitedGuestsList.length} guests directly to the guest list successfully!`);
+                          }}
+                          className="text-pink-500 hover:text-pink-600 font-extrabold select-none cursor-pointer underline hover:no-underline font-sans"
+                        >
+                          Add Guests Directly
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom control row */}
+              <div className="pt-4 border-t border-slate-150 dark:border-white/5 flex justify-between items-center shrink-0">
+                {inviteStep === 2 ? (
+                  <button
+                    onClick={() => setInviteStep(1)}
+                    className="px-4.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-350 bg-slate-55 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-black cursor-pointer transition-all flex items-center gap-1 select-none font-sans"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                {inviteStep === 1 ? (
+                  <button
+                    onClick={() => {
+                      if (invitedGuestsList.length === 0) {
+                        alert("Add or upload at least one email recipient to proceed!");
+                        return;
+                      }
+                      setInviteStep(2);
+                    }}
+                    className="px-5 py-2 rounded-xl bg-violet-650 hover:bg-violet-700 text-white text-xs font-black cursor-pointer transition-all shadow-md flex items-center gap-1 select-none font-sans"
+                  >
+                    Next &gt;
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      invitedGuestsList.forEach(guest => {
+                        onRegisterPass(event, {
+                          name: guest.name,
+                          email: guest.email,
+                          type: 'GENERAL'
+                        });
+                      });
+                      setShowInviteGuestsModal(false);
+                      alert(`Sent digital invitations to all ${invitedGuestsList.length} recipients!`);
+                    }}
+                    className="px-5 py-2 rounded-xl bg-violet-650 hover:bg-violet-700 text-white text-xs font-black cursor-pointer transition-all shadow-md shadow-violet-500/10 flex items-center gap-1.5 select-none font-sans"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Send Invites
+                  </button>
+                )}
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 2: Send Blast Modal --- */}
+      {showSendBlastModal && (
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setShowSendBlastModal(false); }}
+          className="fixed inset-0 bg-slate-150/40 dark:bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in font-sans"
+        >
+          <div className="bg-white dark:bg-[#110F30] rounded-2xl w-full max-w-lg shadow-2xl p-6 relative text-left space-y-5 animate-scale-up" onClick={(e) => e.stopPropagation()}>
+            
+            <div className="flex justify-between items-center pb-2">
+              <div>
+                <h3 className="text-base font-black text-slate-905 dark:text-white">Send Blast</h3>
+                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  Guests will receive the blast via email, SMS or in-app notification. It will also be shown on the event page.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowSendBlastModal(false)}
+                className="text-slate-400 hover:text-slate-650 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {blastFeedbackMessage && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-4 py-2.5 rounded-xl text-xs font-bold select-none leading-snug animate-pulse flex items-center gap-2">
+                <Check className="w-4 h-4 shrink-0" />
+                <span>{blastFeedbackMessage}</span>
+              </div>
+            )}
+
+            <div className="space-y-1.5 font-sans">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Recipients</label>
+              
+              <select
+                value={blastRecipient}
+                onChange={(e) => setBlastRecipient(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-white font-extrabold focus:ring-2 focus:ring-violet-500/10 cursor-pointer outline-none"
+              >
+                <option value="All">All ({attendees.length + invitedGuestsList.length})</option>
+                <option value="Going">Going ({attendees.length})</option>
+                <option value="Invited">Invited ({invitedGuestsList.length})</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5 font-sans">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Subject (Optional)</label>
+              <input 
+                type="text"
+                placeholder={`New message in ${event.name || "iub"}`}
+                value={blastSubject}
+                onChange={(e) => setBlastSubject(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/10 text-slate-800 dark:text-white"
+              />
+            </div>
+
+            <div className="space-y-1.5 font-sans">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Message</label>
+              <textarea 
+                placeholder="Share a message with your guests..."
+                value={blastMessage}
+                onChange={(e) => setBlastMessage(e.target.value)}
+                className="w-full h-32 p-3 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/10 text-slate-800 dark:text-white resize-none"
+              />
+            </div>
+
+            <div className="pt-4 border-t border-slate-150 dark:border-white/5 flex justify-between items-center select-none font-sans">
+              <div className="flex items-center gap-2 font-sans">
+                <button
+                  onClick={() => {
+                    if (!blastMessage.trim()) {
+                      alert("Add message body description before broadcasting!");
+                      return;
+                    }
+                    setBlastFeedbackMessage(`Successfully broadcasted and delivered mail/SMS text to all going subscriber attendees!`);
+                    setTimeout(() => setShowSendBlastModal(false), 3000);
+                  }}
+                  className="px-4.5 py-2 rounded-xl bg-violet-650 hover:bg-violet-700 text-white text-xs font-black cursor-pointer transition-all flex items-center gap-1.5 select-none font-sans"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  Send
+                </button>
+                <button
+                  onClick={() => {
+                    setBlastFeedbackMessage(`Scheduled blast delivery queued in organizers dashboard successfully.`);
+                    setTimeout(() => setShowSendBlastModal(false), 2000);
+                  }}
+                  className="px-4.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-705 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-bold cursor-pointer transition-all select-none font-sans"
+                >
+                  Schedule
+                </button>
+              </div>
+
+              <button
+                onClick={() => setBlastPreviewMode(!blastPreviewMode)}
+                className="text-slate-400 hover:text-indigo-650 dark:hover:text-violet-400 text-xs font-black transition-colors cursor-pointer select-none font-sans"
+              >
+                Preview
+              </button>
+            </div>
+
+            {blastPreviewMode && (
+              <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/15 border border-indigo-150/50 dark:border-indigo-950 rounded-xl space-y-1.5 leading-snug text-xs text-slate-500 dark:text-slate-350 font-sans animate-fade-in text-left">
+                <h5 className="text-[10px] font-bold text-indigo-505 uppercase tracking-widest leading-none">Smart Preview Overlay</h5>
+                <p className="font-mono text-[9px] text-slate-400">Subject: {blastSubject || `New message in ${event.name || "Event"}`}</p>
+                <p className="italic bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200/50 dark:border-white/5 font-serif text-[11px] text-slate-700 dark:text-slate-300">
+                  {blastMessage || "Share a message with your guests..."}
+                </p>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 3: Share Event Modal --- */}
+      {showShareEventModal && (
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setShowShareEventModal(false); }}
+          className="fixed inset-0 bg-slate-150/40 dark:bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in font-sans"
+        >
+          <div className="bg-white dark:bg-[#110F30] rounded-2xl w-full max-w-sm shadow-2xl p-6 relative text-center space-y-6 animate-scale-up" onClick={(e) => e.stopPropagation()}>
+            
+            <button 
+              onClick={() => setShowShareEventModal(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-650 dark:hover:text-white p-1 rounded-full cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex flex-col items-center justify-center pt-2">
+              <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-150 dark:border-indigo-950 text-slate-700 dark:text-slate-300 flex items-center justify-center select-none shadow-sm">
+                <Share2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-slate-900 dark:text-white mt-3.5 font-sans">Share This Event</h3>
+            </div>
+
+            <div className="grid grid-cols-5 gap-3 shrink-0 py-2">
+              <button 
+                onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicUrl)}`, '_blank')}
+                className="flex flex-col items-center gap-1.5 group select-none cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-150 dark:border-indigo-950/30 text-slate-700 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:scale-[1.03] transition-all">
+                  <Facebook className="w-4.5 h-4.5 fill-current stroke-0" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-bold tracking-tight">Share</span>
+              </button>
+
+              <button 
+                onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(publicUrl)}&text=${encodeURIComponent(`Join ${event.name}!`)}`, '_blank')}
+                className="flex flex-col items-center gap-1.5 group select-none cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-150 dark:border-indigo-950/30 text-slate-700 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:scale-[1.03] transition-all">
+                  <Twitter className="w-4.5 h-4.5 fill-current stroke-0" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-bold tracking-tight">Post</span>
+              </button>
+
+              <button 
+                onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(publicUrl)}`, '_blank')}
+                className="flex flex-col items-center gap-1.5 group select-none cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-150 dark:border-indigo-950/30 text-slate-705 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:scale-[1.03] transition-all">
+                  <Linkedin className="w-4.5 h-4.5 fill-current stroke-0" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-bold tracking-tight">Post</span>
+              </button>
+
+              <button 
+                onClick={() => window.open(`mailto:?subject=${encodeURIComponent(event.name)}&body=${encodeURIComponent(publicUrl)}`)}
+                className="flex flex-col items-center gap-1.5 group select-none cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-150 dark:border-indigo-950/30 text-slate-700 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:scale-[1.03] transition-all">
+                  <Mail className="w-4.5 h-4.5" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-bold tracking-tight">Email</span>
+              </button>
+
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(publicUrl);
+                  setShareCopied(true);
+                  setTimeout(() => setShareCopied(false), 2000);
+                }}
+                className="flex flex-col items-center gap-1.5 group select-none cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-150 dark:border-indigo-950/30 text-slate-700 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:scale-[1.03] transition-all">
+                  <Share2 className="w-4.5 h-4.5" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-bold tracking-tight font-sans">Share</span>
+              </button>
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-white/5" />
+
+            <div className="space-y-1.5 text-left select-none font-sans">
+              <label className="block text-[11px] font-bold text-slate-400">Share the link:</label>
+              
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  readOnly 
+                  value={publicUrl}
+                  className="flex-grow px-3 py-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900 text-xs font-mono select-all text-slate-700 dark:text-slate-300 focus:outline-none"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(publicUrl);
+                    setShareCopied(true);
+                    setTimeout(() => setShareCopied(false), 2000);
+                  }}
+                  className={`px-4.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition-colors border select-none font-sans ${
+                    shareCopied 
+                      ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
+                      : 'bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-white border-slate-200 dark:border-indigo-950/30 hover:bg-slate-200 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {shareCopied ? '✓ Copied' : 'Copy'}
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
