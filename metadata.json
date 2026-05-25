@@ -1,0 +1,6 @@
+{
+  "name": "Trmn",
+  "description": "Premium Event QR Pass Generator. Branded, scannable passes in under 4 minutes with live previews, bulk CSV upload, automated color palettes, and a built-in browser scanner.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

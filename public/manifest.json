@@ -1,0 +1,17 @@
+{
+  "name": "Trmn Event Pass Generator",
+  "short_name": "Trmn",
+  "description": "Premium offline-first Event QR Pass Generator",
+  "start_url": "/?pwa=true",
+  "display": "standalone",
+  "background_color": "#F7F6F3",
+  "theme_color": "#6366F1",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='none'><rect width='512' height='512' rx='120' fill='%236366F1'/><path d='M150 160C150 160 210 160 256 160C302 160 362 160 362 160V230H290V380H222V230H150V160Z' fill='white'/><path d='M256 160C256 160 320 220 320 280C320 340 256 380 256 380V160Z' fill='white' opacity='0.3'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
