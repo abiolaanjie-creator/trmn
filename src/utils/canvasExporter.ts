@@ -603,7 +603,7 @@ export async function renderPassToCanvas(
   ctx.textAlign = 'left';
   ctx.textBaseline = 'bottom';
   
-  let rawEventName = event.name || 'Branded Workshop Class';
+  let rawEventName = event.name || 'Event Title';
   if (isCreative) rawEventName = rawEventName.toUpperCase();
   const maxEventNameWidth = width - 40 * scale;
   let dispEventName = rawEventName;
@@ -672,7 +672,7 @@ export async function renderPassToCanvas(
   ctx.fillStyle = event.brandContentColor ? event.brandContentColor : (event.brandTextColor ? hexToRgba(event.brandTextColor, 0.85) : (isBloom ? '#3C443D' : isRomance ? '#5C4E3A' : isCanvas ? '#44403C' : isLove ? '#FECDD3' : isGarden ? '#5B21B6' : isTech ? '#E0F2FE' : isCreative ? '#4F46E5' : isDarkTheme ? '#CBD5E1' : '#334155'));
   ctx.font = isRomance || isCanvas || isLove ? `500 ${11 * scale}px "Georgia", serif` : isTech ? `500 ${11 * scale}px "Courier New", monospace` : `500 ${11 * scale}px "Inter", sans-serif`;
   ctx.fillText(formatPassDate(event.dateTime) || 'Saturday, 14 June 2026', 20 * scale, headerHeight + 58 * scale);
-  ctx.fillText(event.venue || 'Maitama Community Gardens', 20 * scale, headerHeight + 76 * scale);
+  ctx.fillText(event.venue || 'Provide a physical or virtual location.', 20 * scale, headerHeight + 76 * scale);
   ctx.restore();
 
   // 7. DRAW RESPONSIVE QR CODE FRAME inside stub height

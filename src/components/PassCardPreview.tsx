@@ -417,7 +417,7 @@ export function PassCardPreview({ event, attendee, id = 'pass-card-element' }: P
               textShadow: event.template === 'AURORA' ? `0 0 10px ${accent}45` : undefined
             }}
           >
-            {event.name || 'Branded Workshop Class'}
+            {event.name || 'Event Title'}
           </h1>
         </div>
       </div>
@@ -499,7 +499,7 @@ export function PassCardPreview({ event, attendee, id = 'pass-card-element' }: P
             <div className="flex items-center gap-1.5 opacity-95">
               <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: event.brandContentColor || event.brandTextColor || accent }} />
               <span className="leading-tight truncate max-w-[240px]">
-                {event.venue || 'Maitama Community Gardens'}
+                {event.venue || 'Provide a physical or virtual location.'}
               </span>
             </div>
           </div>

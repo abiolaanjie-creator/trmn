@@ -657,7 +657,7 @@ export const EventOverview: React.FC<EventOverviewProps> = ({
                 <ExternalLink className="w-3.5 h-3.5 text-slate-400 ml-1" />
               </h4>
               <p className="text-xs text-slate-405 dark:text-slate-450">
-                {event.venue ? `${event.venue}, Univ of Ibadan, Ibadan` : 'Provide a physical or virtual location.'}
+                {event.venue || 'Provide a physical or virtual location.'}
               </p>
             </div>
           </div>

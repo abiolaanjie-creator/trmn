@@ -95,7 +95,7 @@ const SEED_EVENTS: EventDetails[] = [
     id: 'evt-fgjytj',
     name: 'fgjytj',
     dateTime: '2026-05-24T20:00', // Today 8:00 PM
-    venue: 'University of Ibadan',
+    venue: '',
     organizerName: 'Yemi Adebayo',
     brandColor: '#3B82F6',
     template: 'AURORA',
@@ -123,7 +123,7 @@ const SEED_EVENTS: EventDetails[] = [
     id: 'evt-go-getters',
     name: 'Go Getters',
     dateTime: '2026-05-23T23:00', // Saturday May 23 11:00 PM (Yesterday relative to May 24)
-    venue: 'University of Ibadan',
+    venue: '',
     organizerName: 'Self',
     brandColor: '#F59E0B',
     template: 'NEON',
